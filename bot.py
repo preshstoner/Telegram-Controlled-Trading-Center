@@ -98,13 +98,17 @@ async def challenge_check_command(update: Update, context: ContextTypes.DEFAULT_
 
         data = response.json()
         audit = data["audit"]
+        ever_breached = data["historical_breach_recorded"]
 
         # Determine visual indicator badges
         rec_badge = "🟢" if audit["recorded"] == "above floor recorded" else "🚨"
         fresh_badge = "⚡" if "fresh" in audit["freshness"] else "⚠️"
-        is_ready = (audit["recorded"] == "above floor recorded" and "fresh" in audit["freshness"])
+        history_badge = "🛑 VIOLATION RECORDED" if ever_breached else "🟢 Clean History"
 
-        verdict = "✅ READY FOR TRADING" if is_ready else "🛑 TRADING PAUSED (STALE / RISK)"
+        # A recovered current value cannot undo a past crossing!
+        is_ready = (audit["recorded"] == "above floor recorded" and "fresh" in audit["freshness"] and not ever_breached)
+
+        verdict = "✅ READY FOR TRADING" if is_ready else "🛑 BLOCKED: PAST BREACH OR STALE DATA"
 
         message = (
             f"🛡️ *Prop Firm Challenge Readiness Audit*\n\n"
@@ -113,6 +117,7 @@ async def challenge_check_command(update: Update, context: ContextTypes.DEFAULT_
             f"• *Headroom:* `${data['headroom']:,.2f}`\n"
             f"{rec_badge} *Recorded Status:* `{audit['recorded']}`\n"
             f"{fresh_badge} *Data Freshness:* `{audit['freshness']}`\n\n"
+            f"• *Historical Ledger: * `{history_badge}`\n\n"
             f"*Verdict:* `{verdict}`"
         )
         await update.message.reply_text(message, parse_mode="Markdown")

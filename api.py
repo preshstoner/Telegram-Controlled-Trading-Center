@@ -29,8 +29,11 @@ bot_state = {
     "is_running": True,
     "active_pair": "BTC/USDT",
     "profit_loss_pct": 2.45,
-    "total_trades": 42
+    "total_trades": 42,
+    "loss_floor": 98000.0,
+    "historical_breach_recorded": False # Permanently tarcks if floor was ever crossed
 }
+
 
 class ControlCommand(BaseModel):
     action: str
@@ -51,12 +54,12 @@ def inspect_snapshot(equity, observed_at, now, floor, max_age):
 
 @app.get("/challenge/audit")
 def audit_challenge():
-    """Performs a strict equity headroom and data freshness audit for challenge compliance."""
+    """Audit challenge readiness enforcing crossing permanence and strict freshness."""
     now_utc = datetime.now(timezone.utc)
 
     # Simulated account state (In production, pull this from your broker/exchange API)
-    simulated_equity = 99100.0
-    loss_floor = 98000.0
+    simulated_equity = 99100.0 # Currently above floor
+    loss_floor = bot_state["loss_floor"]
 
     # Simulate a fresh observation (e.g., recorded 15 seconds ago)
     observed_time = now_utc - timedelta(seconds=15)
@@ -64,13 +67,24 @@ def audit_challenge():
     # Run the strict inspection logic
     result = inspect_snapshot(simulated_equity, observed_time, now_utc, loss_floor, timedelta(seconds=30))
 
+    # Enforce Crossing Permanence: If it ever crossed, lock the historical breach flag
+    if result["recorded"] == "crossing recorded":
+        bot_state["historical_breach_recorded"] = True
+
     return {
         "equity": simulated_equity,
         "floor": loss_floor,
         "headroom": round(simulated_equity - loss_floor, 2),
         "observed_at": observed_time.isoformat(),
-        "audit": result
+        "audit": result,
+        "historical_breach_recorded": bot_state["historical_breach_recorded"]
     }
+
+@app.post("/challenge/reset-breach")
+def reset_breach_ledger():
+    """Manual override to reset historical breach state (e.g., after starting a new challenge phase)."""
+    bot_state["historical_breach_recorded"] = False
+    return {"message": "Historical breach ledger rest successfully."}
 
 @app.get("/telemetry")
 def get_telemetry():
