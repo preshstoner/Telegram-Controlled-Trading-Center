@@ -1,0 +1,15 @@
+# Troubleshooting
+
+<AccordionGroup>
+  <Accordion id="stale-data-error" title="Challenge Check returns 'unknown now (stale)'">
+    **Symptom:** The `/challenge_check` command flags your data freshness as stale even though the bot is running.
+    **Cause:** The timestamp on the account equity snapshot is older than the configured `max_age` limit (e.g., 30 seconds).
+    **Fix:** Ensure your broker or simulation data feed is actively pushing updates to the `/challenge/audit` endpoint.
+  </Accordion>
+
+  <Accordion id="connection-refused" title="FastAPI Connection Refused">
+    **Symptom:** The Telegram bot returns an error stating it cannot connect to the backend API.
+    **Cause:** The FastAPI server is either not running or `API_BASE_URL` in your `.env` is set incorrectly.
+    **Fix:** Verify that Uvicorn is running on port 8000 and that `API_BASE_URL=http://127.0.0.1:8000`.
+  </Accordion>
+</AccordionGroup>

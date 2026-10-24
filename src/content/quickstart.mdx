@@ -1,0 +1,26 @@
+# Quickstart
+
+Get your Telegram-Controlled Trading Operations Center running locally in under 5 minutes.
+
+<Steps>
+  <Step title="Clone and Install Dependencies">
+    Clone your repository and install the required Python packages:
+    ```bash
+    pip install fastapi uvicorn python-telegram-bot requests scikit-learn numpy python-dotenv
+    ```
+  </Step>
+  <Step title="Configure your .env file">
+    Create a `.env` file in your root directory and add your BotFather token:
+    ```env
+    TELEGRAM_TOKEN=your_bot_token_here
+    API_BASE_URL=[http://127.0.0.1:8000](http://127.0.0.1:8000)
+    ```
+  </Step>
+  <Step title="Launch Backend and Bot">
+    Run the FastAPI backend in one terminal, and the Telegram bot in another.
+  </Step>
+</Steps>
+
+<Warning title="Keep your Telegram Token Secret">
+  Never commit your `.env` file to GitHub. If your token leaks, revoke it immediately via `@BotFather` on Telegram.
+</Warning>

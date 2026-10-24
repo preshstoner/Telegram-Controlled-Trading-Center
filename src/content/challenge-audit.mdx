@@ -1,0 +1,5 @@
+# Prop Firm Challenge Integrity Audit
+
+Prop firm challenges fail when traders make decisions on stale data or assume a current profit undoes a past loss floor violation. The `/challenge_check` engine enforces:
+- **Data Freshness Limits:** Rejects observations older than configured thresholds.
+- **Crossing Permanence:** Locks historical breach flags so a recovered equity reading cannot mask a prior drawdown violation.

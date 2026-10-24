@@ -1,0 +1,19 @@
+{
+    "tabs": [
+        {
+            "tab": "Documentation",
+            "groups": [
+                { "group": "Overview", "pages": ["introduction", "quickstart"] },
+                { 
+                    "group": "Operations Center", 
+                    "pages": ["commands/telegram-bot", "commands/fastapi-backend"] 
+                },
+                { 
+                    "group": "Risk & Intelligence", 
+                    "pages": ["risk/ml-crash-guard", "risk/challenge-audit"] 
+                },
+                { "group": "Security", "pages": ["security/env-management"] }
+            ]
+        }
+    ]
+}
