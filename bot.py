@@ -51,12 +51,15 @@ def safe_api_request(method: str, endpoint: str, **kwargs):
 
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Sends a welcome message when /start is issued."""
+    """Sends a welcome message with the complete command suite when /start is issued."""
     await update.message.reply_text(
-        "🤖 *Trading Bot Manager Online*\n\n"
-        "Use /performance to check profits\n"
-        "Use /status to check system health\n"
-        "Use /bot_start or /bot_stop to control execution.",
+        "🤖 *Trading Bot Operations Center Online*\n\n"
+        "Here are your available command controls:\n\n"
+        "• `/status` - check system health & active trading pair\n"
+        "• `/performance` - Pull real-time profit/loss telemetry\n"
+        "• `/predict_crash` - Run ML anomaly detection & crash risk score\n"
+        "• `/challenge_check` - Audit prop firm equity headroom & data freshness\n"
+        "• `/bot_start` or `/bot_stop` - Control trading execution remotely",
         parse_mode="Markdown"
     )
 
@@ -83,6 +86,40 @@ async def performance_command(update: Update, context: ContextTypes.DEFAULT_TYPE
     except Exception as e:
         logger.error(f"Failed to fetch performance: {e}")
         await update.message.reply_text("❌ Error: Could not connect to the trading bot backend.")
+
+
+async def challenge_check_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Audits prop firm challenge readiness based on equity headroom and data freshness."""
+    try:
+        response = safe_api_request("GET", "/challenge/audit")
+        if not response or response.status_code != 200:
+            await update.message.reply_text("❌ Error: Challenge audit service unavailable.")
+            return
+
+        data = response.json()
+        audit = data["audit"]
+
+        # Determine visual indicator badges
+        rec_badge = "🟢" if audit["recorded"] == "above floor recorded" else "🚨"
+        fresh_badge = "⚡" if "fresh" in audit["freshness"] else "⚠️"
+        is_ready = (audit["recorded"] == "above floor recorded" and "fresh" in audit["freshness"])
+
+        verdict = "✅ READY FOR TRADING" if is_ready else "🛑 TRADING PAUSED (STALE / RISK)"
+
+        message = (
+            f"🛡️ *Prop Firm Challenge Readiness Audit*\n\n"
+            f"• *Current Equity:* `${data['equity']:,.2f}`\n"
+            f"• *Loss Floor:* `${data['floor']:,.2f}`\n"
+            f"• *Headroom:* `${data['headroom']:,.2f}`\n"
+            f"{rec_badge} *Recorded Status:* `{audit['recorded']}`\n"
+            f"{fresh_badge} *Data Freshness:* `{audit['freshness']}`\n\n"
+            f"*Verdict:* `{verdict}`"
+        )
+        await update.message.reply_text(message, parse_mode="Markdown")
+
+    except Exception as e:
+        logger.error(f"Challenge check failed: {e}")
+        await update.message.reply_text("❌ Failed to evaluate challenge compliance.")
 
 async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Checks overall bot operational status"""
@@ -159,6 +196,7 @@ def main():
     app.add_handler(CommandHandler("bot_start", control_command))
     app.add_handler(CommandHandler("bot_stop", control_command))
     app.add_handler(CommandHandler("predict_crash", predict_crash_command))
+    app.add_handler(CommandHandler("challenge_check", challenge_check_command))
 
     logger.info("Starting Telegram Bot polling...")
     app.run_polling()

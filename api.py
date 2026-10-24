@@ -1,6 +1,8 @@
 from fastapi import FastAPI, HTTPException
+from datetime import datetime, timedelta, timezone
 from pydantic import BaseModel
 import random
+import math
 import numpy as np
 from sklearn.ensemble import IsolationForest
 
@@ -32,6 +34,43 @@ bot_state = {
 
 class ControlCommand(BaseModel):
     action: str
+
+def inspect_snapshot(equity, observed_at, now, floor, max_age):
+    if not all(isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x) for x in (equity, floor)):
+        return {"recorded": "unknown", "freshness": "invalid value"}
+    if (not isinstance(observed_at, datetime) or not isinstance(now, datetime) or observed_at.utcoffset() is None or now.utcoffset() is None or max_age < timedelta(0)):
+        return {"recorded": "unknown", "freshness": "invalid time"}
+    age = now - observed_at
+    if age < timedelta(0):
+        return {"recorded": "unknown", "freshness": "future timestamp"}
+    recorded = "crossing recorded" if equity <= floor else "above floor recorded"
+    return {
+        "recorded": recorded,
+        "freshness": "fresh observation" if age <= max_age else "unknown now (stale)"
+    }
+
+@app.get("/challenge/audit")
+def audit_challenge():
+    """Performs a strict equity headroom and data freshness audit for challenge compliance."""
+    now_utc = datetime.now(timezone.utc)
+
+    # Simulated account state (In production, pull this from your broker/exchange API)
+    simulated_equity = 99100.0
+    loss_floor = 98000.0
+
+    # Simulate a fresh observation (e.g., recorded 15 seconds ago)
+    observed_time = now_utc - timedelta(seconds=15)
+
+    # Run the strict inspection logic
+    result = inspect_snapshot(simulated_equity, observed_time, now_utc, loss_floor, timedelta(seconds=30))
+
+    return {
+        "equity": simulated_equity,
+        "floor": loss_floor,
+        "headroom": round(simulated_equity - loss_floor, 2),
+        "observed_at": observed_time.isoformat(),
+        "audit": result
+    }
 
 @app.get("/telemetry")
 def get_telemetry():
